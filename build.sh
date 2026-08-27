@@ -115,14 +115,21 @@ fi
 )
 
 minichlink_dir="$UPSTREAM_DIR/minichlink"
-source_words=$(
+if command -v shasum >/dev/null 2>&1; then
+  upstream_sha1_tool=shasum
+else
+  upstream_sha1_tool=sha1sum
+fi
+build_values=$(
   make -s --no-print-directory -C "$minichlink_dir" \
-    --eval 'print-c-s:;@printf "%s\n" "$(C_S)"' print-c-s
+    "SHASUM=$upstream_sha1_tool" -f Makefile -f - print-build-values <<'MAKE'
+.PHONY: print-build-values
+print-build-values:
+	@printf '%s\n%s\n' "$(C_S)" "$(VERSION)"
+MAKE
 )
-upstream_version=$(
-  make -s --no-print-directory -C "$minichlink_dir" \
-    --eval 'print-version:;@printf "%s\n" "$(VERSION)"' print-version
-)
+source_words=$(printf '%s\n' "$build_values" | sed -n '1p')
+upstream_version=$(printf '%s\n' "$build_values" | sed -n '2p')
 read -r -a sources <<< "$source_words"
 read -r -a cflag_args <<< "$cflags"
 read -r -a ldflag_args <<< "$ldflags"

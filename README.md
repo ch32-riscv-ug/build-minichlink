@@ -8,9 +8,10 @@ pinned ch32fun commit. Each archive has the single-root layout required by
 Arduino package indexes and other binary consumers.
 
 > [!IMPORTANT]
-> This repository is currently a pre-implementation scaffold. The release
-> design and metadata generator exist, but the build script, CI workflows, and
-> published releases do not yet exist.
+> The build, metadata, CI, and release workflows are implemented. See
+> [Actions](https://github.com/ch32-riscv-ug/build-minichlink/actions) for the
+> latest run and [Releases](https://github.com/ch32-riscv-ug/build-minichlink/releases)
+> for published outputs.
 
 This is an independent packaging project. It is not part of, affiliated with,
 or endorsed by ch32fun, CNLohr, or libusb. It is also not a mirror: ch32fun
@@ -26,6 +27,7 @@ pinned ch32fun commit
                     │
                     ├── one archive per host
                     ├── tools_minichlink.json
+                    ├── corresponding source bundle
                     └── versions/<version>.json
 ```
 
@@ -37,14 +39,16 @@ The initial design covers these Arduino host identifiers:
 |---|---|---|
 | `x86_64-pc-linux-gnu` | native Linux x86-64 | `.tar.gz` |
 | `aarch64-linux-gnu` | native Linux Arm64 | `.tar.gz` |
-| `x86_64-apple-darwin` | macOS with `-arch x86_64` | `.tar.gz` |
+| `x86_64-apple-darwin` | native Intel macOS | `.tar.gz` |
 | `arm64-apple-darwin` | native macOS Arm64 | `.tar.gz` |
 | `x86_64-mingw32` | mingw-w64 cross-build | `.zip` |
 | `i686-mingw32` | mingw-w64 cross-build | `.zip` |
 
-Each archive will contain one `minichlink-<version>/` directory with the
+Each archive contains one `minichlink-<version>/` directory with the
 executable and the applicable upstream license files. Linux archives will also
-carry the upstream udev rules. libusb is intended to be linked statically;
+carry the upstream udev rules. Each release also carries the exact ch32fun
+source, original libusb source archive, and builder scripts in a source bundle.
+libusb is linked statically;
 Linux will still depend dynamically on libudev because minichlink itself uses
 it.
 
@@ -71,9 +75,10 @@ flags, dynamic dependencies, and output checksums for every host.
 
 ## Current status and documentation
 
-Only [`emit_fragment.py`](emit_fragment.py), which validates per-host build
-metadata and generates release records, is implemented. It is not yet wired to
-a build or release workflow.
+The end-to-end build and release path is implemented. Linux x86-64/Arm64 builds
+have run in GitHub Actions, and Windows x86-64/i686 builds have been exercised
+locally in isolated environments. See the [design's validation status](docs/design.md#existing-research)
+and the current Actions run for the remaining host checks.
 
 - [Initial design and decisions](docs/design.md) ([日本語](docs/design.ja.md))
 - [Development and repository guide](docs/development.md) ([日本語](docs/development.ja.md))

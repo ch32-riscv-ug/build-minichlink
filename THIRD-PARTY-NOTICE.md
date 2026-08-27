@@ -1,12 +1,12 @@
 # Third-party content
 
 The root [`LICENSE`](LICENSE) (MIT) covers **only this repository's own files** —
-the planned workflows, `emit_fragment.py`, and the documentation. It does
+the workflows, build scripts, and documentation. It does
 **not** replace the terms that apply to third-party content in release assets.
 
 ## minichlink (ch32fun)
 
-The binaries planned for this repository's releases are builds of
+The binaries in this repository's releases are builds of
 [minichlink](https://github.com/cnlohr/ch32fun/tree/master/minichlink), part of
 [ch32fun](https://github.com/cnlohr/ch32fun):
 
@@ -17,7 +17,7 @@ The binaries planned for this repository's releases are builds of
 
 ## libusb
 
-The initial design statically links [libusb](https://github.com/libusb/libusb)
+The build statically links [libusb](https://github.com/libusb/libusb)
 into every binary:
 
 - **Copyright** the libusb contributors
@@ -30,11 +30,12 @@ library, including enabling recipients to relink it with a modified library.
 The exact obligations depend on the distribution method and are not replaced
 by build metadata alone.
 
-Before the first release, the project must verify that the release provides or
-validly offers all material required by the license. The planned build record
-— exact libusb version and checksum, minichlink commit, compiler, and flags —
-supports reproducibility and relinking, but this pre-implementation repository
-does not yet claim that a compliant release bundle exists.
+Each release includes a source bundle containing the exact ch32fun source, the
+original libusb source archive, and this repository's builder scripts. The build
+record preserves the exact libusb version and checksum, minichlink commit,
+compiler, and flags. These support reproducibility and relinking, but before the
+first release the project must still verify that the complete distribution
+mechanism satisfies all applicable license conditions.
 
 ## What the build changes
 
@@ -68,12 +69,12 @@ builds or their packaging here.
 ## 日本語
 
 ルートの[`LICENSE`](LICENSE)(MIT)は**このrepository自身のファイル**
-(予定しているworkflow、`emit_fragment.py`、文書)にのみ適用されます。release assetに
+(workflow、build script、文書)にのみ適用されます。release assetに
 含まれる第三者著作物の条件を置き換えるものではありません。
 
 ### minichlink(ch32fun)
 
-releaseで配布する予定のバイナリは
+releaseで配布するバイナリは
 [minichlink](https://github.com/cnlohr/ch32fun/tree/master/minichlink)であり、
 [ch32fun](https://github.com/cnlohr/ch32fun)の一部です。
 
@@ -84,7 +85,7 @@ releaseで配布する予定のバイナリは
 
 ### libusb
 
-初版設計では、すべてのバイナリに[libusb](https://github.com/libusb/libusb)を
+すべてのバイナリに[libusb](https://github.com/libusb/libusb)を
 static linkします。
 
 - **著作権** libusb contributors
@@ -96,9 +97,10 @@ libraryをstatic linkした実行ファイルの配布に、受領者が改変�
 ようにすることを含む条件を定めています。具体的な義務は配布方法によって変わり、build
 metadataだけで置き換えられるものではありません。
 
-初releaseの前に、licenseが要求する資料の同梱または有効な提供方法を確認します。libusbの
-正確なversionとchecksum、minichlinkのcommit、hostごとのcompilerとflagsを記録する設計は
-再現と再linkを助けますが、実装前の現時点では「releaseが条件を満たす」とは表明しません。
+各releaseには、正確なch32fun source、元のlibusb source archive、このrepositoryの
+builder scriptを含むsource bundleを添付します。また、libusbの正確なversionとchecksum、
+minichlinkのcommit、hostごとのcompilerとflagsを記録します。これらは再現と再linkを
+助けますが、初release前に配布方法全体が適用されるlicense条件を満たすことを最終確認します。
 
 ### ビルドが変えているもの
 
@@ -122,6 +124,6 @@ programmerで**libudevを直接呼んでいる**ためで、外すにはupstream
 
 ### 推奨ではありません
 
-これらのビルドはCH32 RISC-V User Groupが作成する予定で、**ch32fun、CNLohr、
+これらのビルドはCH32 RISC-V User Groupが作成し、**ch32fun、CNLohr、
 libusbプロジェクトとは無関係**です。推奨・支援を受けているものでもありません。
 minichlink自体の問題はch32funへ、ビルドや梱包の問題はこちらへ報告してください。

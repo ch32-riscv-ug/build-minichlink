@@ -19,7 +19,9 @@ environment are neither tested nor guaranteed.
 - The upstream commit and commit time are recorded.
 - This repository's builder commit and the build revision are recorded.
 - The libusb version, URL, checksum, and linkage are recorded.
-- Compiler version, flags, and dynamic dependencies are recorded per host.
+- Source-bundle URL, checksum, and size are recorded.
+- Compiler version, flags, binary format, dynamic dependencies, and execution
+  check results are recorded per host.
 - Existing version records cannot be overwritten.
 - Invalid or incomplete input cannot produce a release.
 
@@ -61,7 +63,8 @@ Windows checks should use a tool such as `objdump -p` to confirm that
 
 ## Release publication criteria
 
-- All six archives and `tools_minichlink.json` exist.
+- All six archives, `tools_minichlink.json`, the source bundle, and
+  `THIRD-PARTY-NOTICE.md` exist.
 - Archive, metadata, and license checks pass.
 - Unavailable execution checks and their reasons are visible.
 - The corresponding version record matches the release assets.

@@ -29,6 +29,7 @@ class EmitFragmentTests(unittest.TestCase):
             archive.write_bytes(host.encode())
             record = {
                 "host": host,
+                "archiveFileName": archive.name,
                 "runner": "test-runner",
                 "cc": "cc",
                 "ccVersion": "cc test",

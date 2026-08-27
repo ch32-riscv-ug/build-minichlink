@@ -2,8 +2,8 @@
 
 [日本語](design.ja.md)
 
-Status: pre-implementation initial design. Items requiring implementation
-validation are listed under [Open validation work](#open-validation-work).
+Status: initial implementation complete. Remaining CI-environment checks are
+listed under [Open validation work](#open-validation-work).
 
 ## Purpose and scope
 
@@ -35,8 +35,9 @@ Out of scope:
 
 ## Release artifacts
 
-Every `v<version>` release contains six host archives and one
-`tools_minichlink.json`. Archives are attached to releases, not committed.
+Every `v<version>` release contains six host archives, `tools_minichlink.json`,
+a corresponding source bundle, and `THIRD-PARTY-NOTICE.md`. Assets are attached
+to releases, not committed.
 
 ```text
 minichlink-<version>/
@@ -72,7 +73,7 @@ Published tags and assets are append-only.
 |---|---|
 | `x86_64-pc-linux-gnu` | native `gcc` on Linux x86-64 |
 | `aarch64-linux-gnu` | native `gcc` on Linux Arm64 |
-| `x86_64-apple-darwin` | macOS `cc -arch x86_64` |
+| `x86_64-apple-darwin` | native `cc` on `macos-15-intel` |
 | `arm64-apple-darwin` | native macOS Arm64 `cc` |
 | `x86_64-mingw32` | `x86_64-w64-mingw32-gcc` |
 | `i686-mingw32` | `i686-w64-mingw32-gcc` |
@@ -86,8 +87,11 @@ Arduino platform installation rather than merely disabling that tool.
 
 All hosts statically link a checksum-pinned upstream libusb release archive.
 The initial input is libusb 1.0.29. Build it with shared libraries, examples,
-tests, and libusb's optional udev integration disabled. Each macOS host is built
-for one architecture; a universal static library is unnecessary.
+tests, and libusb's optional udev integration disabled. Intel and Arm64 macOS
+build on their respective native runners, so neither `--host`, `-arch`, nor a
+universal static library is needed. libusb updates are explicit manual changes
+to `build-config.sh`; they rebuild the current upstream commit with the next
+build revision rather than following libusb automatically.
 
 Linux still dynamically links libudev because minichlink's ESP32-S2 backend
 uses libudev directly. Removing it would require an upstream source change.
@@ -95,10 +99,13 @@ uses libudev directly. Removing it would require an upstream source change.
 ### minichlink
 
 Use release optimization and strip debug information. Linux and macOS can
-override the upstream Makefile flags. The Windows recipe hard-codes an x86-64
-compiler, so the build script must derive the upstream source list and invoke
-the selected mingw-w64 compiler directly. Do not copy the source list into this
-repository.
+override the upstream Makefile flags. The upstream Windows recipe hard-codes an
+x86-64 compiler, so the build script must derive the upstream source list and
+invoke the selected mingw-w64 compiler directly. Do not copy the source list
+into this repository. The i686 link retains the `_Sleep@4` import because
+upstream declares `Sleep` without the Win32 `WINAPI` calling convention.
+Isolated builds of both Windows architectures have confirmed static libusb and
+no libusb or winpthread DLL dependency.
 
 The entire ch32fun repository is required because minichlink includes files
 outside its own directory.
@@ -131,6 +138,13 @@ Manual `workflow_dispatch` supports a `ref` and a non-publishing `dry_run`.
 Concurrent publication is prohibited, matrix failures do not hide other host
 results, and a partial six-host release is never published.
 
+The schedule runs daily at 03:17 UTC. If no build is needed and the repository
+has been idle for at least 50 days, an empty keepalive commit prevents GitHub
+from disabling the schedule. After a complete build, the workflow uploads the
+assets to a draft release, commits `versions/<version>.json` to the default
+branch, and then publishes the draft. Branch protection must permit the Actions
+record commit.
+
 Release notes state that artifacts are build outputs and carry no hardware
 operation guarantee. A published release is immutable: do not move its tag,
 replace its assets, or delete older releases.
@@ -154,8 +168,9 @@ publish a new release. Never replace the earlier version.
 
 `emit_fragment.py` generates `versions/<version>.json`. It records the full
 upstream commit and commit time, this repository's builder commit, build
-revision, libusb version/URL/checksum/linkage, per-host artifact
-URL/name/SHA-256/size, runner, compiler version, flags, and dynamic dependencies.
+revision, libusb version/URL/checksum/linkage, source-bundle metadata, per-host
+artifact URL/name/SHA-256/size, runner, compiler version, flags, binary format,
+dynamic dependencies, and execution-check results.
 Existing records cannot be overwritten.
 
 ## Licensing
@@ -166,28 +181,26 @@ libusb is LGPL-2.1-or-later and its `COPYING` is bundled.
 Because libusb is statically linked, the first distribution must satisfy the
 conditions of LGPL-2.1 section 6, including an effective way for recipients to
 relink with a modified library and the applicable source or object-code
-provision requirements. Reproducibility metadata helps, but is not by itself a
+provision requirements. Each release includes the exact ch32fun source, the
+original libusb source archive, and builder scripts in a source bundle.
+Reproducibility metadata helps, but is not by itself a
 substitute for those license requirements. See
 [THIRD-PARTY-NOTICE.md](../THIRD-PARTY-NOTICE.md).
 
 ## Open validation work
 
-- Validate static libusb and binary dependencies on macOS, Windows, and Linux
-  Arm64.
-- Determine exact Windows system libraries for x86-64 and i686.
+- Validate static libusb and binary dependencies on both macOS runners.
 - Confirm the LGPL source/object-code distribution mechanism before the first
   release.
-- Choose the upstream polling interval.
-- Define how Actions commits `versions/<version>.json` to the default branch,
-  including permissions and the order of commit, tag, and release creation.
-- Define whether libusb updates remain an explicit manual dependency change.
 - Update the consumer ADR to describe this build repository and its trust model.
 
 ## Existing research
 
 Linux x86-64 experiments have confirmed a static libusb build, the remaining
 direct libudev dependency, release-size reduction after stripping, the `-l`
-option, and the need for the full ch32fun checkout. Other host builds and actual
+option, and the need for the full ch32fun checkout. Isolated x86-64 and i686
+Windows builds have confirmed the PE formats and imported DLLs. Linux Arm64 has
+built successfully on `ubuntu-24.04-arm`. macOS CI builds and actual
 programming/debugging remain unverified. The commit history records when these
 findings were added or changed.
 

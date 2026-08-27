@@ -5,7 +5,9 @@
 [minichlink](https://github.com/cnlohr/ch32fun/tree/master/minichlink)を、固定したch32funのcommitからhostごとにビルドし、Arduino package indexなどから導入できる単一root構造のアーカイブにするプロジェクトです。
 
 > [!IMPORTANT]
-> 現在は実装前の雛形です。初版設計とrelease metadata生成スクリプトはありますが、build script、CI workflow、公開済みreleaseはまだありません。
+> build、metadata生成、CI、release workflowを実装済みです。最新の実行結果と公開物は
+> [Actions](https://github.com/ch32-riscv-ug/build-minichlink/actions)と
+> [Releases](https://github.com/ch32-riscv-ug/build-minichlink/releases)で確認できます。
 
 本プロジェクトはch32fun、CNLohr、libusbとは独立しており、提携・推奨・支援を受けたものではありません。また、upstream成果物のミラーでもありません。ch32funはここで必要なhost別バイナリを公開していないため、固定したsourceから公開CIでビルドします。
 
@@ -18,6 +20,7 @@
                     │
                     ├── hostごとのarchive
                     ├── tools_minichlink.json
+                    ├── 対応するsource bundle
                     └── versions/<version>.json
 ```
 
@@ -29,12 +32,12 @@
 |---|---|---|
 | `x86_64-pc-linux-gnu` | Linux x86-64 native | `.tar.gz` |
 | `aarch64-linux-gnu` | Linux Arm64 native | `.tar.gz` |
-| `x86_64-apple-darwin` | macOS、`-arch x86_64` | `.tar.gz` |
+| `x86_64-apple-darwin` | macOS Intel native | `.tar.gz` |
 | `arm64-apple-darwin` | macOS Arm64 native | `.tar.gz` |
 | `x86_64-mingw32` | mingw-w64 cross-build | `.zip` |
 | `i686-mingw32` | mingw-w64 cross-build | `.zip` |
 
-各archiveは`minichlink-<version>/`というroot directoryを1つだけ持ち、実行ファイルと適用されるupstreamのlicense文書を収録します。Linux版にはupstreamのudev rulesも同梱します。
+各archiveは`minichlink-<version>/`というroot directoryを1つだけ持ち、実行ファイルと適用されるupstreamのlicense文書を収録します。Linux版にはupstreamのudev rulesも同梱します。releaseには、使用したch32fun source、元のlibusb source archive、このrepositoryのbuild scriptをまとめたsource bundleも添付します。
 
 libusbはstatic linkする方針です。利用環境にlibusbを別途導入する必要はありません。ただしLinuxでは、minichlink自身がlibudevを直接利用するため、`libudev.so.1`への動的依存が残ります。
 
@@ -55,7 +58,7 @@ GitHub Actionsがupstreamまたはbuild手順の変更を検出したら、build
 
 ## 現在の状態と関連文書
 
-現在実装されているのは、hostごとのbuild metadataを検査し、release記録を生成する[`emit_fragment.py`](emit_fragment.py)だけです。buildやrelease workflowにはまだ接続されていません。
+buildとreleaseの一連の処理は実装済みです。Linux x86-64/Arm64はGitHub Actionsで、Windows x86-64/i686はローカルの隔離環境で実ビルドを確認しています。host別の確認状況は[初版仕様書](docs/design.ja.md#12-調査結果)、最新のCI結果はActionsを参照してください。
 
 初版の要件、判断理由、互換性調査は[docs/design.ja.md](docs/design.ja.md)、repositoryの構成と開発手順は[docs/development.ja.md](docs/development.ja.md)、buildとreleaseの自動検査は[docs/test-plan.ja.md](docs/test-plan.ja.md)にあります。各文書には英語版へのリンクがあります。第三者著作物と再配布条件は[THIRD-PARTY-NOTICE.md](THIRD-PARTY-NOTICE.md)を参照してください。
 

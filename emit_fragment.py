@@ -81,8 +81,16 @@ def collect(dist: pathlib.Path) -> dict:
             raise SystemExit(
                 f"{host_dir} holds {len(archives)} archives; expected exactly one"
             )
-        info["_archive"] = archives[0]
-        found[info["host"]] = info
+        archive = archives[0]
+        if info.get("archiveFileName") != archive.name:
+            raise SystemExit(
+                f"{record} names {info.get('archiveFileName')!r}, but archive is {archive.name!r}"
+            )
+        host = info["host"]
+        if host in found:
+            raise SystemExit(f"duplicate build metadata for host: {host}")
+        info["_archive"] = archive
+        found[host] = info
 
     missing = [h for h in HOST_ORDER if h not in found]
     if missing:

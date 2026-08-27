@@ -18,7 +18,8 @@ GitHub Actionsは6 hostの成果物がすべて揃い、以下の自動検査に
 - upstream commitとcommit日時が記録されること。
 - このrepositoryのbuilder commitとbuild revisionが記録されること。
 - libusb version、URL、checksum、link方式が記録されること。
-- compiler version、flags、動的依存がhostごとに記録されること。
+- source bundleのURL、checksum、sizeが記録されること。
+- compiler version、flags、binary形式、動的依存、実行検査結果がhostごとに記録されること。
 - 既存のversion記録を上書きしないこと。
 - 入力不足や不正なmetadataではreleaseを公開しないこと。
 
@@ -61,7 +62,8 @@ logと`build.json`に残す。Windowsでは`objdump -p`などを使い、`libusb
 
 ## release公開の完了条件
 
-- 6 hostすべてのarchiveと`tools_minichlink.json`がある。
+- 6 hostすべてのarchive、`tools_minichlink.json`、source bundle、
+  `THIRD-PARTY-NOTICE.md`がある。
 - archive、metadata、licenseの自動検査がすべて成功している。
 - 実行できなかった検査と理由が明示されている。
 - 対応する`versions/<version>.json`がrepositoryにあり、release assetと一致する。

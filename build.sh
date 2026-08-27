@@ -33,7 +33,11 @@ libusb_archive="$download_root/libusb-${LIBUSB_VERSION}.tar.bz2"
 if [[ ! -f "$libusb_archive" ]]; then
   curl --fail --location --retry 3 --output "$libusb_archive" "$LIBUSB_URL"
 fi
-actual_libusb_sha=$(shasum -a 256 "$libusb_archive" | awk '{print $1}')
+if command -v sha256sum >/dev/null 2>&1; then
+  actual_libusb_sha=$(sha256sum "$libusb_archive" | awk '{print $1}')
+else
+  actual_libusb_sha=$(shasum -a 256 "$libusb_archive" | awk '{print $1}')
+fi
 if [[ "$actual_libusb_sha" != "$LIBUSB_SHA256" ]]; then
   echo "libusb checksum mismatch: expected $LIBUSB_SHA256, got $actual_libusb_sha" >&2
   exit 1
@@ -62,19 +66,14 @@ case "$host" in
     ;;
   x86_64-apple-darwin)
     cc=cc
-    configure_host=(--host=x86_64-apple-darwin)
-    libusb_cflags="-arch x86_64 -O2"
-    libusb_ldflags="-arch x86_64"
-    cflags="-arch x86_64 -O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I."
-    ldflags="-arch x86_64 $libusb_build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x"
+    cflags="-O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I."
+    ldflags="$libusb_build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x"
+    execution_status="run"
     ;;
   arm64-apple-darwin)
     cc=cc
-    configure_host=(--host=aarch64-apple-darwin)
-    libusb_cflags="-arch arm64 -O2"
-    libusb_ldflags="-arch arm64"
-    cflags="-arch arm64 -O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I."
-    ldflags="-arch arm64 $libusb_build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x"
+    cflags="-O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I."
+    ldflags="$libusb_build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x"
     execution_status="run"
     ;;
   x86_64-mingw32)
@@ -89,7 +88,9 @@ case "$host" in
     cc=i686-w64-mingw32-gcc
     configure_host=(--host=i686-w64-mingw32)
     cflags="-O2 -DNDEBUG -Wall -D_WIN32_WINNT=0x0600 -DCH32V003 -DMINICHLINK -I."
-    ldflags="-static $libusb_build/libusb/.libs/libusb-1.0.a -lpthread -lsetupapi -lcfgmgr32 -lole32 -ladvapi32 -lws2_32 -Wl,-s"
+    # Upstream declares Win32 Sleep without WINAPI. Retain the stdcall import so
+    # GNU ld's 32-bit stdcall fixup has a live _Sleep@4 target.
+    ldflags="-static $libusb_build/libusb/.libs/libusb-1.0.a -lpthread -lsetupapi -lcfgmgr32 -lole32 -ladvapi32 -lws2_32 -Wl,--undefined=_Sleep@4 -Wl,-s"
     binary_name="minichlink.exe"
     archive_ext="zip"
     ;;
@@ -128,8 +129,8 @@ binary_format=$(file -b "$binary")
 case "$host" in
   x86_64-pc-linux-gnu) [[ "$binary_format" == *"x86-64"* ]] ;;
   aarch64-linux-gnu) [[ "$binary_format" == *"aarch64"* || "$binary_format" == *"ARM64"* ]] ;;
-  x86_64-apple-darwin) [[ "$(lipo -archs "$binary")" == "x86_64" ]] ;;
-  arm64-apple-darwin) [[ "$(lipo -archs "$binary")" == "arm64" ]] ;;
+  x86_64-apple-darwin) [[ "$(uname -m)" == "x86_64" && "$(lipo -archs "$binary")" == "x86_64" ]] ;;
+  arm64-apple-darwin) [[ "$(uname -m)" == "arm64" && "$(lipo -archs "$binary")" == "arm64" ]] ;;
   x86_64-mingw32) [[ "$binary_format" == *"PE32+"* && "$binary_format" == *"x86-64"* ]] ;;
   i686-mingw32) [[ "$binary_format" == *"PE32"* && "$binary_format" != *"PE32+"* && "$binary_format" == *"Intel 80386"* ]] ;;
 esac

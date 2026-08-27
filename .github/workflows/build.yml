@@ -51,17 +51,21 @@ jobs:
 
       - name: Resolve parameters
         id: parameters
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          EVENT_NAME: ${{ github.event_name }}
         shell: bash
         run: |
           source ./build-config.sh
-          ref="${{ inputs.ref }}"
+          ref="$INPUT_REF"
           if [[ -z "$ref" ]]; then ref="$UPSTREAM_DEFAULT_REF"; fi
-          case "${{ github.event_name }}" in
+          case "$EVENT_NAME" in
             schedule) mode=schedule ;;
             push) mode=push ;;
             *) mode=manual ;;
           esac
-          dry_run="${{ inputs.dry_run }}"
+          dry_run="$INPUT_DRY_RUN"
           if [[ "$dry_run" != "true" ]]; then dry_run=false; fi
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
@@ -85,11 +89,16 @@ jobs:
             --github-output "$GITHUB_OUTPUT"
 
       - name: Summary
+        env:
+          REASON: ${{ steps.version.outputs.reason }}
+          UPSTREAM_SHA: ${{ steps.version.outputs.upstream_sha }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHOULD_BUILD: ${{ steps.version.outputs.should_build }}
         run: |
-          echo "Reason: ${{ steps.version.outputs.reason }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Upstream: ${{ steps.version.outputs.upstream_sha }}" >> "$GITHUB_STEP_SUMMARY"
-          if [[ "${{ steps.version.outputs.should_build }}" == "true" ]]; then
-            echo "Version: ${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Reason: $REASON" >> "$GITHUB_STEP_SUMMARY"
+          echo "Upstream: $UPSTREAM_SHA" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SHOULD_BUILD" == "true" ]]; then
+            echo "Version: $VERSION" >> "$GITHUB_STEP_SUMMARY"
           fi
 
   build:
@@ -106,7 +115,7 @@ jobs:
             runner: ubuntu-24.04-arm
             packages: build-essential libudev-dev
           - host: x86_64-apple-darwin
-            runner: macos-latest
+            runner: macos-15-intel
             packages: ""
           - host: arm64-apple-darwin
             runner: macos-latest
@@ -174,6 +183,7 @@ jobs:
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
           UPSTREAM_DIR: ${{ github.workspace }}/src/ch32fun
+          UPSTREAM_SHA: ${{ needs.prepare.outputs.upstream_sha }}
           BUILDER_SHA: ${{ github.sha }}
         run: ./make_source_bundle.sh
 
@@ -222,6 +232,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          BUILDER_SHA: ${{ github.sha }}
         shell: bash
         run: |
           tag="v$VERSION"
@@ -235,7 +247,7 @@ jobs:
             find dist -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name 'tools_minichlink.json' \) -print0
           )
           assets+=("THIRD-PARTY-NOTICE.md")
-          gh release create "$tag" --draft --target "${{ github.sha }}" \
+          gh release create "$tag" --draft --target "$BUILDER_SHA" \
             --title "minichlink $VERSION" --notes-file dist/release-notes.md \
             "${assets[@]}"
 
@@ -251,7 +263,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "versions/$VERSION.json"
           git commit -m "build: record minichlink $VERSION"
-          git push origin "HEAD:${{ github.event.repository.default_branch }}"
+          git push origin "HEAD:$DEFAULT_BRANCH"
           record_pushed=true
 
           gh release edit "$tag" --draft=false

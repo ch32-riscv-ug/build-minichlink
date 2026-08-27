@@ -2,7 +2,7 @@
 
 [English](design.md)
 
-状態: 初版設計(実装前)。実装時の確認事項は[§11](#11-実装時の確認事項)。
+状態: 初版実装済み。CI環境で残る確認事項は[§11](#11-実装時の確認事項)。
 
 ## 1. 目的
 
@@ -54,6 +54,8 @@ upstreamのchecksumではなく**ビルド手順**になる。名前を`build-`�
 |---|---:|---|
 | hostごとのアーカイブ | 6 | 単一rootディレクトリ`minichlink-<version>/` |
 | `tools_minichlink.json` | 1 | Arduino tool定義fragment |
+| source bundle | 1 | ch32fun、libusb、builder scriptの対応source |
+| `THIRD-PARTY-NOTICE.md` | 1 | 第三者著作物と再配布条件 |
 
 repositoryにcommitするものは`versions/<version>.json`(§9)だけ。アーカイブはcommitしない。
 
@@ -105,11 +107,11 @@ YYYY.M.D-g<short-sha>-r<build-revision>
 | Arduino `host` | runner | コンパイラ | 状態 |
 |---|---|---|---|
 | `x86_64-pc-linux-gnu` | `ubuntu-latest` | `gcc`(native) | **手順を実測済み** |
-| `aarch64-linux-gnu` | `ubuntu-24.04-arm` | `gcc`(native) | 未検証 |
-| `x86_64-apple-darwin` | `macos-latest` | `cc -arch x86_64` | 未検証 |
-| `arm64-apple-darwin` | `macos-latest` | `cc -arch arm64`(native) | 未検証 |
-| `x86_64-mingw32` | `ubuntu-latest` | `x86_64-w64-mingw32-gcc` | 未検証 |
-| `i686-mingw32` | `ubuntu-latest` | `i686-w64-mingw32-gcc` | 未検証 |
+| `aarch64-linux-gnu` | `ubuntu-24.04-arm` | `gcc`(native) | **Actionsで実測済み** |
+| `x86_64-apple-darwin` | `macos-15-intel` | `cc`(native) | 未検証 |
+| `arm64-apple-darwin` | `macos-latest` | `cc`(native) | 未検証 |
+| `x86_64-mingw32` | `ubuntu-latest` | `x86_64-w64-mingw32-gcc` | **隔離環境で実測済み** |
+| `i686-mingw32` | `ubuntu-latest` | `i686-w64-mingw32-gcc` | **隔離環境で実測済み** |
 
 arduino-cliのhost照合は正規表現(`x86_64-.*linux-gnu`、`(aarch64|arm64)-linux-gnu`、
 `x86_64-apple-darwin.*`、`arm64-apple-darwin.*`、`(amd64|x86_64)-.*(mingw32|cygwin)`、
@@ -122,8 +124,9 @@ arduino-cliのhost照合は正規表現(`x86_64-.*linux-gnu`、`(aarch64|arm64)-
 - upstreamの**releaseアーカイブ**を使う(`libusb-<ver>.tar.bz2`)。生成済みの`configure`が
   入っているため**autotoolsのinstallは不要**。upstreamのCIは`git clone` + `autogen.sh`の
   ために automake/autoconf/libtool を入れているが、こちらでは要らない
-- 取得後、**checksumを検証してから展開する**。versionとchecksumはworkflowの`env`に
-  固定し、`versions/<version>.json`に記録する
+- 取得後、**checksumを検証してから展開する**。versionとchecksumは`build-config.sh`に
+  固定し、`versions/<version>.json`に記録する。更新は自動追従させず、明示的な変更として
+  同じupstream commitでも次のbuild revisionを作る
 - 初版は`1.0.29`
   (SHA-256 `5977fc950f8d1395ccea9bd48c06b3f808fd3c2c961b44b0c2e6e29fc3a70a85`)
 
@@ -137,12 +140,12 @@ configureは最小構成にする。
 `--disable-udev`でよいことは実測で確認済み。この設定でビルドしたlibusbは
 `lsusb`と同じデバイスをすべて列挙する。minichlinkはhotplugを使わないため影響しない。
 
-クロスビルドでは`--host=<triple>`を、macOSの非nativeアーキではあわせて
-`CFLAGS`/`LDFLAGS`に`-arch <arch>`を渡す。
+Windowsのクロスビルドでは`--host=<triple>`を渡す。macOSはIntelとArm64それぞれの
+native runnerでlibusbとminichlinkを組むため、`--host`や`-arch`は使わない。
 
 > **注意**: upstreamのCIはmacOSで2アーキのstatic libusbを`lipo`でuniversalに
-> まとめている。こちらはhostごとに1アーキのアーカイブを出すので、その必要は無い。
-> アーキごとに個別にビルドすればよい。
+> まとめている。こちらはhostごとにnative runnerで単一archのアーカイブを出すので、
+> universal化は不要である。
 
 ### 5.3 minichlink自身
 
@@ -154,14 +157,16 @@ configureは最小構成にする。
   そちらは別パッケージのため入っているとは限らない
 - **リリース用フラグを使う。** upstreamのMakefileは`-O0 -g3`かつstripしない。
   最適化してstripする(実測: unstripped 1,114,000 byte → stripped 320,560 byte)
-- Linux/macOSは`make minichlink`に`CFLAGS`/`LDFLAGS`を渡して上書きする。
-  コマンドラインの変数指定はMakefile内の`:=`より優先される
+- Linux/macOSもMakefileからsource一覧とupstream versionを取得し、native compilerを
+  直接起動する。これによりrelease flagsとstatic libusbを明示的に記録する
 - **Windowsはmakeのターゲットを使えない。** `minichlink.exe`のrecipeが
   `x86_64-w64-mingw32-gcc`をハードコードしており、i686に振り替えられない。
   Makefileから`C_S`(sourceの一覧)を読み取り、コンパイラを直接起動する。
   sourceの一覧をこちら側に書き写さないこと。upstreamがファイルを増やしたときに壊れる
-- Windowsのリンクは`-lsetupapi -lws2_32`に加え、static libusbが要求するWindows APIの
-  ライブラリが要る(`-lcfgmgr32 -lole32 -ladvapi32`程度)。**実測で確定させること**
+- Windowsのリンクはstatic libusbと`-lpthread -lsetupapi -lcfgmgr32 -lole32
+  -ladvapi32 -lws2_32`を使用する。i686では、upstreamの`Sleep`宣言とWin32のstdcall
+  importを解決するため`-Wl,--undefined=_Sleep@4`も指定する。両archの実ビルドで、
+  libusbやwinpthreadの追加DLLに依存しないことを確認済みである
 
 `minichlink`のビルドには`minichlink/`だけでなく**repository全体が要る**
 (`minichlink.c`が`../ch32fun/ch32fun.h`をincludeしている)。
@@ -181,14 +186,14 @@ hostごとの分岐をworkflowのYAMLに書かず、`build.sh <host>` 1本に集
 ## 6. 受け入れ検査
 
 `build.sh`の中で、そのhostのバイナリが実行できる場合に必ず行う。
-クロスビルドしたものは実行できないため、実行を伴う検査は省略し、
+Windows向けにクロスビルドしたものは実行できないため、実行を伴う検査は省略し、
 省略した事実をログに残す(黙って飛ばさない)。
 
 | 検査 | 内容 |
 |---|---|
 | **`-l`の存在** | `minichlink -h`の出力に`-l `があること |
 | help | `-h`がhelpを表示すること。終了値は記録する(upstreamは現在`255`) |
-| 動的依存 | Linuxは`ldd`、macOSは`otool -L`。**`libusb`が現れないこと** |
+| 動的依存 | Linuxは`readelf`、macOSは`otool -L`、Windowsは`objdump -p`。**`libusb`が現れないこと** |
 | アーカイブ構造 | 展開してroot直下がディレクトリ1つだけであること |
 | 同梱物 | バイナリ、`LICENSE`、`COPYING`、(Linux)`99-minichlink.rules`があること |
 
@@ -196,7 +201,7 @@ hostごとの分岐をworkflowのYAMLに書かず、`build.sh <host>` 1本に集
 `minichlink-2982dfd/1.0.0`は`-l`を`Error: Unknown command l`で拒否する古い世代で、
 serial指定ができない。同じ轍を踏まないための検査であり、外さないこと。
 
-Windows実行形式の検査手段(`objdump -p`によるimport確認など)は実装時に決める。
+Windowsは`objdump -p`でimport DLLを記録し、libusb DLLへの依存が無いことを検査する。
 
 ### 実機動作
 
@@ -208,7 +213,7 @@ Windows実行形式の検査手段(`objdump -p`によるimport確認など)は�
 
 ### 7.1 `build.yml` — 公開する
 
-- `schedule`でupstreamの既定branchを確認し、最新commitが未releaseならbuildとreleaseを
+- 毎日03:17 UTCの`schedule`でupstreamの既定branchを確認し、最新commitが未releaseならbuildとreleaseを
   自動実行する。既にrelease済みのcommitなら何もしない
 - `workflow_dispatch`でも起動できる。入力は`ref`(upstreamのcommit-ish、既定`master`)と
   `dry_run`(booleanで、releaseを作らずartifactだけ出す)
@@ -221,6 +226,8 @@ Windows実行形式の検査手段(`objdump -p`によるimport確認など)は�
   (`emit_fragment.py`は上書きを拒否して終了する)
 - `fail-fast: false`。1 hostの失敗で他のhostの情報を失わない。ただし**6 host揃わなければ
   publishしない**(`emit_fragment.py`が欠けを検出して失敗する)
+- 6 hostが揃ったらdraft releaseへassetを置き、`versions/<version>.json`をdefault branchへ
+  commitしてからdraftを公開する。branch protectionはActionsによる記録commitを許可する
 - release notesに、成果物はbuild outputであり実機動作を保証しないことを明記する
 
 ### 7.2 upstream更新の取扱い
@@ -231,7 +238,8 @@ Windows実行形式の検査手段(`objdump -p`によるimport確認など)は�
 
 upstreamの各commitを必ずreleaseする必要はない。確認時点の最新commitが未releaseなら
 そのcommitをreleaseすればよく、確認間隔の間に通過したcommitは飛ばしてよい。
-scheduleの自動停止対策はworkflow実装時に入れる。
+scheduleの自動停止を避けるため、50日以上repositoryに変更がなく、かつ新しいbuildが
+不要だった場合だけ空commitを作る。
 
 ### 7.3 責務の境界
 
@@ -269,7 +277,8 @@ upstreamまたはbuild手順の変更
 | `builderCommit` / `buildRevision` | このrepositoryのbuild定義を含むcommit、`r1`から始まるrevision |
 | `libusb` | version、URL、SHA-256、`linkage: static` |
 | `systems[]` | hostごとのURL、ファイル名、SHA-256、size(=fragmentと同じ) |
-| `builds[]` | hostごとのrunner、コンパイラとその`--version`、`cflags`、`ldflags`、動的依存の一覧 |
+| `sourceBundle` | 対応source bundleのURL、ファイル名、SHA-256、size |
+| `builds[]` | hostごとのrunner、コンパイラとその`--version`、`cflags`、`ldflags`、binary形式、動的依存、実行検査の結果 |
 
 `emit_fragment.py`が生成する。**実装済み。**
 
@@ -283,7 +292,9 @@ upstreamまたはbuild手順の変更
 
 libusbを**staticリンク**するため、LGPL-2.1 §6が定める条件を満たす必要がある。
 受領者が改変したlibusbで再linkできるようにすることに加え、配布方法に応じたsourceまたは
-object code等の提供条件を、初release前に確認する。`versions/<version>.json`へlibusbの
+object code等の提供条件を、初release前に確認する。各releaseには、正確なch32fun source、
+元のlibusb source archive、このrepositoryのbuilder scriptを含むsource bundleを添付する。
+`versions/<version>.json`へlibusbの
 正確なversionとchecksum、minichlinkのcommit、hostごとのcompilerとflagsを記録することは
 再現と再linkを助けるが、**metadataだけでlicense条件を満たすとは扱わない**。
 
@@ -296,14 +307,9 @@ object code等の提供条件を、初release前に確認する。`versions/<ver
 
 | # | 事項 | 決定した方針 | 残る確認 |
 |---|---|---|---|
-| C-1 | `i686-mingw32` | 32 bit binaryを実ビルドする | static libusbを含むlinkとimport DLLを実測する |
-| C-2 | libusbのlink方式 | 全hostでstatic linkする | macOS、Windows、Linux Arm64でbuildと依存を実測する |
-| C-3 | Windows link library | mingw-w64で直接compilerを起動する | x86-64、i686それぞれの必要libraryを確定する |
+| C-2 | libusbのlink方式 | 全hostでstatic linkする | macOS 2種でbuildと依存を実測する |
 | C-4 | ArduinoCore-CH32のADR | ADR-0011へ`R-3`と`build-`接頭辞を追記する | consumer repository側で別途変更する |
-| C-5 | LGPL-2.1 §6への対応 | static linkを維持し、再link可能な資料を提供する | 初releaseの配布物とsource／object codeの提供方法を確認する |
-| C-8 | upstream確認間隔 | scheduleで自動確認する | 日次などの実行間隔を決める |
-| C-9 | version記録のcommit方法 | `versions/<version>.json`をrepositoryへ残す | Actionsからdefault branchへ直接commitする権限と、tag・release作成順を決める |
-| C-10 | libusbの更新 | minichlinkとは独立してversionとchecksumを固定する | 自動追従せず手動更新とするか決める |
+| C-5 | LGPL-2.1 §6への対応 | static linkを維持し、source bundleを提供する | 初release前に配布物とsource／object codeの提供方法を最終確認する |
 
 ## 12. 調査結果
 
@@ -329,13 +335,17 @@ repositoryの履歴で確認する。
 | arduino-cliのhost照合 | arduino-cliバイナリ内の正規表現(`x86_64-.*linux-gnu`ほか)を確認 |
 | tool versionの前例 | 手元のpackage index 214種のうち`1.22.0-80-g6c4433a-5.2.0`、`1.8.0-48-gb176eee`などが実在。先頭0を持つ数値フィールドは1件も無い |
 
+### Windows x86-64/i686で確認済み
+
+- static libusbを含むPE32+/PE32 binaryのリンク
+- importは`KERNEL32.dll`、`msvcrt.dll`、`WS2_32.dll`で、libusb DLLとwinpthread DLLには依存しない
+- i686で必要なstdcall import保持flag
+- 単一rootのzipとlicense文書の同梱
+
 ### 未確認
 
-- **macOS 2種、Windows 2種、aarch64のビルド**。上流CIにmacOSとWindows(x86_64)の
-  前例はあるが、こちらの構成(static libusb、リリースフラグ、i686)では未検証
-- Windowsのstatic libusbが要求するライブラリの正確な一覧
+- **macOS 2種のビルド**。各native GitHub-hosted runnerでの実行が必要
 - **実機での書き込み・デバッグ動作**。このrepositoryの保証・受け入れ検査の対象外
-- `ubuntu-24.04-arm` runnerでのビルド
 
 ## 13. 参照
 

@@ -4,7 +4,7 @@
 
 ## 現在の構成
 
-このrepositoryは実装前の雛形です。現時点ではrelease metadataを生成する`emit_fragment.py`のみが実装され、build scriptとGitHub Actions workflowは未実装です。
+build、version解決、metadata生成、CI、release workflowまで実装されています。
 
 ```text
 README.md                 英語の入口
@@ -12,6 +12,13 @@ README.ja.md              日本語の入口
 LICENSE                   repository自身のMIT License
 THIRD-PARTY-NOTICE.md     第三者著作物と再配布条件
 emit_fragment.py          release fragmentとbuild記録の生成
+resolve_version.py        upstream commitの解決とversion採番
+build-config.sh           upstreamとlibusb入力の固定値
+build.sh                  host別buildの共通入口
+make_source_bundle.sh     release用source bundleの生成
+.github/workflows/        CI、upstream確認、build、release
+tests/                    Python scriptの単体test
+versions/                 公開済みversionのbuild記録
 docs/design.ja.md         初版設計、判断理由、調査結果
 docs/design.md            同内容の英語版
 docs/development.ja.md    repository構成と開発手順
@@ -20,14 +27,7 @@ docs/test-plan.ja.md      buildとreleaseの自動検査
 docs/test-plan.md         同内容の英語版
 ```
 
-実装後は次の構成を追加する予定です。
-
-```text
-build.sh                  host別buildの共通入口
-.github/workflows/        upstream更新確認、build、release
-versions/                 公開済みversionのbuild記録
-dist/                     一時成果物。commitしない
-```
+`dist/`と`work/`は一時成果物でありcommitしません。
 
 ## 必要なもの
 
@@ -38,7 +38,38 @@ python3 --version
 uv --version
 ```
 
-build実装で必要になるcompiler、libusbのbuild依存、host別toolchainは[初版仕様書](design.ja.md)の「ビルド定義」を正本とします。まだ全hostで検証されていないため、この文書では未確定のinstall commandを提示しません。
+compiler、libusbのbuild依存、host別toolchainは[初版仕様書](design.ja.md)の「ビルド定義」とworkflowのmatrixを正本とします。
+
+## 手元でのbuild
+
+対象のch32fun checkoutに対してversionを解決し、表示されたversionを`VERSION`へ設定して
+host別scriptを実行します。compilerとlibrary headerは対象hostのrunnerと同じものが必要です。
+
+```sh
+python3 ./resolve_version.py \
+  --upstream /path/to/ch32fun \
+  --versions versions \
+  --builder-sha "$(git rev-parse HEAD)" \
+  --mode manual
+
+VERSION=<表示されたversion> \
+UPSTREAM_DIR=/path/to/ch32fun \
+./build.sh x86_64-pc-linux-gnu
+```
+
+`build.sh`はlibusb release archiveを取得してchecksumを検証し、`dist/<host>/`へarchiveと
+`build.json`を出力します。macOS 2種はそれぞれnative runnerでbuildし、Windows 2種だけを
+Linuxからcross-buildします。
+
+source bundleを手元で作る場合は、cleanでcommit済みのbuilder treeを使います。
+
+```sh
+VERSION=<表示されたversion> \
+UPSTREAM_DIR=/path/to/ch32fun \
+UPSTREAM_SHA="$(git -C /path/to/ch32fun rev-parse HEAD)" \
+BUILDER_SHA="$(git rev-parse HEAD)" \
+./make_source_bundle.sh
+```
 
 ## metadata生成スクリプト
 
@@ -47,6 +78,7 @@ build実装で必要になるcompiler、libusbのbuild依存、host別toolchain�
 ```text
 dist/<host>/build.json
 dist/<host>/<archive>
+dist/<source-bundle>
 ```
 
 6 hostがすべて揃い、各host directoryにarchiveが1つだけあることを検査したうえで、次を生成します。
@@ -63,6 +95,13 @@ versions/<version>.json
 ```
 
 生成済みの`versions/<version>.json`は上書きしません。公開済みversionを差し替えないappend-only運用をscript側でも保証するためです。
+
+## Actionsでの公開
+
+`build.yml`は日次のupstream確認、buildに影響する`main`へのpush、手動実行で起動します。
+手動実行ではch32funの`ref`と、公開を行わない`dry_run`を指定できます。6 hostがすべて成功した
+場合だけdraft releaseを作り、version記録をdefault branchへcommitしてから公開します。
+repositoryのbranch protectionはGitHub Actionsによるこのcommitを許可する必要があります。
 
 ## 実装時の原則
 

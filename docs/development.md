@@ -4,29 +4,28 @@
 
 ## Current layout
 
-This repository is a pre-implementation scaffold. `emit_fragment.py`, the
-release metadata generator, is currently the only implemented component. The
-build script and GitHub Actions workflows do not exist yet.
+The build, version resolution, metadata generation, CI, and release workflows
+are implemented.
 
 ```text
 README.md / README.ja.md             English and Japanese entry points
 LICENSE                              MIT License for this repository
 THIRD-PARTY-NOTICE.md                third-party redistribution terms
 emit_fragment.py                     release fragment and build records
+resolve_version.py                   upstream resolution and version assignment
+build-config.sh                      pinned upstream and libusb inputs
+build.sh                             common per-host build entry point
+make_source_bundle.sh                release source bundle generation
+.github/workflows/                   CI, polling, build, and release
+tests/                               Python script unit tests
+versions/                            published build records
 docs/design.md / design.ja.md        design, rationale, research
 docs/development.md / development.ja.md
                                      repository and development guide
 docs/test-plan.md / test-plan.ja.md  build and release checks
 ```
 
-The implementation is expected to add:
-
-```text
-build.sh                  common host build entry point
-.github/workflows/        upstream polling, build, and release workflows
-versions/                 records for published builds
-dist/                     temporary output; never committed
-```
+`dist/` and `work/` are temporary output and are never committed.
 
 ## Requirements
 
@@ -40,9 +39,41 @@ uv --version
 ./emit_fragment.py --help
 ```
 
-Compiler, libusb, and per-host toolchain requirements remain defined by the
-[initial design](design.md). This guide intentionally does not prescribe
-unverified installation commands.
+Compiler, libusb, and per-host toolchain requirements are defined by the
+[initial design](design.md) and the workflow matrix.
+
+## Local builds
+
+Resolve a version against a ch32fun checkout, set `VERSION` to the value shown,
+and invoke the host build script. The target host's compiler and development
+headers must match those installed by the workflow matrix.
+
+```sh
+python3 ./resolve_version.py \
+  --upstream /path/to/ch32fun \
+  --versions versions \
+  --builder-sha "$(git rev-parse HEAD)" \
+  --mode manual
+
+VERSION=<version-shown-above> \
+UPSTREAM_DIR=/path/to/ch32fun \
+./build.sh x86_64-pc-linux-gnu
+```
+
+`build.sh` downloads and verifies the libusb release archive, then writes an
+archive and `build.json` under `dist/<host>/`. Both macOS targets build on their
+respective native runners; only the two Windows targets are cross-built from
+Linux.
+
+To create the source bundle locally, use a clean, committed builder tree:
+
+```sh
+VERSION=<version-shown-above> \
+UPSTREAM_DIR=/path/to/ch32fun \
+UPSTREAM_SHA="$(git -C /path/to/ch32fun rev-parse HEAD)" \
+BUILDER_SHA="$(git rev-parse HEAD)" \
+./make_source_bundle.sh
+```
 
 ## Metadata generator
 
@@ -51,6 +82,7 @@ unverified installation commands.
 ```text
 dist/<host>/build.json
 dist/<host>/<archive>
+dist/<source-bundle>
 ```
 
 After verifying that all six hosts are present, it writes:
@@ -62,6 +94,14 @@ versions/<version>.json
 
 It refuses to overwrite an existing version record, enforcing the append-only
 release policy at the script boundary.
+
+## Actions publication
+
+`build.yml` runs from the daily upstream check, a build-affecting push to
+`main`, or a manual dispatch. Manual runs accept a ch32fun `ref` and a
+non-publishing `dry_run`. Only a complete six-host build creates a draft
+release; the workflow commits the version record to the default branch before
+publishing the draft. Branch protection must permit that GitHub Actions commit.
 
 ## Implementation principles
 

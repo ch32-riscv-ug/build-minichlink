@@ -2,3 +2,6 @@
 # 成果物はreleaseへ添付する。commitしない。
 dist/
 src/
+work/
+__pycache__/
+*.pyc

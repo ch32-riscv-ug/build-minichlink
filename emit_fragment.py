@@ -106,6 +106,9 @@ def main() -> int:
     ap.add_argument("--libusb-version", required=True)
     ap.add_argument("--libusb-sha256", required=True)
     ap.add_argument("--repo", required=True, help="owner/name of this repository")
+    ap.add_argument(
+        "--source-bundle", required=True, type=pathlib.Path, help="relink sources"
+    )
     ap.add_argument("--dist", default="dist", type=pathlib.Path)
     ap.add_argument("--versions", default="versions", type=pathlib.Path)
     args = ap.parse_args()
@@ -116,6 +119,8 @@ def main() -> int:
         ap.error("--version suffix must match --build-revision")
 
     found = collect(args.dist)
+    if not args.source_bundle.is_file():
+        ap.error(f"source bundle does not exist: {args.source_bundle}")
     base = f"https://github.com/{args.repo}/releases/download/v{args.version}"
 
     systems, builds = [], []
@@ -141,6 +146,8 @@ def main() -> int:
                 "cflags": info["cflags"],
                 "ldflags": info["ldflags"],
                 "dynamicDependencies": info["dynamicDependencies"],
+                "binaryFormat": info["binaryFormat"],
+                "executionChecks": info["executionChecks"],
             }
         )
 
@@ -156,6 +163,7 @@ def main() -> int:
         "version": args.version,
         "upstreamRepository": "https://github.com/cnlohr/ch32fun",
         "upstreamCommit": args.upstream_sha,
+        "builderRepository": f"https://github.com/{args.repo}",
         "builderCommit": args.builder_sha,
         "buildRevision": args.build_revision,
         "systems": systems,
@@ -174,6 +182,12 @@ def main() -> int:
             f"v{args.libusb_version}/libusb-{args.libusb_version}.tar.bz2"
         ),
         "linkage": "static",
+    }
+    record["sourceBundle"] = {
+        "url": f"{base}/{args.source_bundle.name}",
+        "archiveFileName": args.source_bundle.name,
+        "checksum": "SHA-256:" + sha256(args.source_bundle),
+        "size": str(args.source_bundle.stat().st_size),
     }
     record["builds"] = builds
     args.versions.mkdir(parents=True, exist_ok=True)

@@ -35,9 +35,10 @@ GitHub Actionsは6 hostの成果物がすべて揃い、以下の自動検査に
 - 実行ファイル、ch32funの`LICENSE`、libusbの`COPYING`があること。
 - Linux archiveだけに`99-minichlink.rules`があること。
 
-native runnerで実行できるbinaryでは、`minichlink -h`が終了コード0になること、helpに`-l`
-optionがあること、libusbが動的依存に現れないことを確認する。これは実行形式とlink結果の
-smoke checkであり、probeやtargetを使った動作保証ではない。
+native runnerで実行できるbinaryでは、`minichlink -h`がhelpを表示して`-l` optionを含む
+こと、libusbが動的依存に現れないことを確認する。upstreamのhelp終了値は現在`255`なので、
+0を要求せず実際の値を記録する。これは実行形式とlink結果のsmoke checkであり、probeや
+targetを使った動作保証ではない。
 
 cross-buildしたbinaryは形式と依存関係を静的に検査する。実行できない検査と理由をbuild
 logと`build.json`に残す。Windowsでは`objdump -p`などを使い、`libusb-1.0.dll`を要求しない

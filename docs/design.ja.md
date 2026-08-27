@@ -187,7 +187,7 @@ hostごとの分岐をworkflowのYAMLに書かず、`build.sh <host>` 1本に集
 | 検査 | 内容 |
 |---|---|
 | **`-l`の存在** | `minichlink -h`の出力に`-l `があること |
-| 起動 | `-h`が0で終了すること |
+| help | `-h`がhelpを表示すること。終了値は記録する(upstreamは現在`255`) |
 | 動的依存 | Linuxは`ldd`、macOSは`otool -L`。**`libusb`が現れないこと** |
 | アーカイブ構造 | 展開してroot直下がディレクトリ1つだけであること |
 | 同梱物 | バイナリ、`LICENSE`、`COPYING`、(Linux)`99-minichlink.rules`があること |

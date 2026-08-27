@@ -1,0 +1,26 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "*.py"
+      - "*.sh"
+      - "tests/**"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Syntax
+        run: |
+          bash -n build.sh build-config.sh make_source_bundle.sh
+          python3 -m py_compile emit_fragment.py resolve_version.py
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v

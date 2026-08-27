@@ -33,9 +33,11 @@ environment are neither tested nor guaranteed.
 - The executable, ch32fun `LICENSE`, and libusb `COPYING` are present.
 - Only Linux archives include `99-minichlink.rules`.
 
-On native runners, confirm that `minichlink -h` exits successfully, its help
-contains `-l`, and libusb is not a dynamic dependency. This is an executable
-format and linkage smoke check, not a probe or target operation guarantee.
+On native runners, confirm that `minichlink -h` displays help containing `-l`
+and that libusb is not a dynamic dependency. Record the actual exit status
+instead of requiring zero; upstream currently returns 255 after displaying
+help. This is an executable format and linkage smoke check, not a probe or
+target operation guarantee.
 
 Cross-built binaries receive static format and dependency checks. Record every
 unavailable execution check and its reason in the build log and `build.json`.

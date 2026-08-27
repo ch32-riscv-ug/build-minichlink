@@ -112,9 +112,10 @@ under `dist/<host>/`.
 ## Build acceptance checks
 
 Before publication, validate archive structure, required license files, the
-presence of `-l` in minichlink help, and dynamic dependencies. Execute the
-binary on native runners. For cross-builds, perform static checks and explicitly
-record which execution checks were skipped.
+presence of `-l` in minichlink help, and dynamic dependencies. Record the help
+exit status rather than requiring zero (upstream currently returns 255 after
+displaying help). Execute the binary on native runners. For cross-builds,
+perform static checks and explicitly record which execution checks were skipped.
 
 These checks establish build and packaging integrity only. Hardware operation
 is outside this repository's acceptance criteria and is not guaranteed.

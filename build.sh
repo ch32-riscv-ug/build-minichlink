@@ -49,7 +49,7 @@ libusb_build="$work_dir/libusb-build"
 mkdir -p "$libusb_build"
 
 cc=""
-configure_host=()
+configure_host=""
 libusb_cflags="-O2"
 libusb_ldflags=""
 cflags="-O2 -DNDEBUG -Wall -Wno-unused-function -DCH32V003 -DMINICHLINK -I."
@@ -78,7 +78,7 @@ case "$host" in
     ;;
   x86_64-mingw32)
     cc=x86_64-w64-mingw32-gcc
-    configure_host=(--host=x86_64-w64-mingw32)
+    configure_host=x86_64-w64-mingw32
     cflags="-O2 -DNDEBUG -Wall -D_WIN32_WINNT=0x0600 -DCH32V003 -DMINICHLINK -I."
     ldflags="-static $libusb_build/libusb/.libs/libusb-1.0.a -lpthread -lsetupapi -lcfgmgr32 -lole32 -ladvapi32 -lws2_32 -Wl,-s"
     binary_name="minichlink.exe"
@@ -86,7 +86,7 @@ case "$host" in
     ;;
   i686-mingw32)
     cc=i686-w64-mingw32-gcc
-    configure_host=(--host=i686-w64-mingw32)
+    configure_host=i686-w64-mingw32
     cflags="-O2 -DNDEBUG -Wall -D_WIN32_WINNT=0x0600 -DCH32V003 -DMINICHLINK -I."
     # Upstream declares Win32 Sleep without WINAPI. Retain the stdcall import so
     # GNU ld's 32-bit stdcall fixup has a live _Sleep@4 target.
@@ -96,12 +96,21 @@ case "$host" in
     ;;
 esac
 
+configure_args=(
+  --disable-shared
+  --enable-static
+  --disable-udev
+  --disable-examples-build
+  --disable-tests-build
+)
+if [[ -n "$configure_host" ]]; then
+  configure_args=("--host=$configure_host" "${configure_args[@]}")
+fi
+
 (
   cd "$libusb_build"
   CC="$cc" CFLAGS="$libusb_cflags" LDFLAGS="$libusb_ldflags" \
-    "$libusb_src/configure" "${configure_host[@]}" \
-      --disable-shared --enable-static --disable-udev \
-      --disable-examples-build --disable-tests-build
+    "$libusb_src/configure" "${configure_args[@]}"
   make -j"${BUILD_JOBS:-2}"
 )
 

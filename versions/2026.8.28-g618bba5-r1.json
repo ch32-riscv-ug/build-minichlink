@@ -1,0 +1,165 @@
+{
+  "name": "minichlink",
+  "version": "2026.8.28-g618bba5-r1",
+  "upstreamRepository": "https://github.com/cnlohr/ch32fun",
+  "upstreamCommit": "618bba58c615ed29dc99e6ea92d869c914b6a8c0",
+  "builderRepository": "https://github.com/ch32-riscv-ug/build-minichlink",
+  "builderCommit": "bb71a48954f1eb9813cf2720ae697b98f49d8f51",
+  "buildRevision": 1,
+  "systems": [
+    {
+      "host": "x86_64-pc-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-x86_64-pc-linux-gnu.tar.gz",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-pc-linux-gnu.tar.gz",
+      "checksum": "SHA-256:0033cc4de8ec668d1b233bb3acc1c54eb63d759b757e6354971ce6e1721fc4e0",
+      "size": "144314"
+    },
+    {
+      "host": "aarch64-linux-gnu",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-aarch64-linux-gnu.tar.gz",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-aarch64-linux-gnu.tar.gz",
+      "checksum": "SHA-256:479006fce4649e373458ca89ddb5a3315cae13c44e3d8f2904730d98c7608f0a",
+      "size": "144905"
+    },
+    {
+      "host": "x86_64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-x86_64-apple-darwin.tar.gz",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:15bc8a3511bb377aa65f5e9d2e8fdec0ddf589062673aa6267861768a4dff9bd",
+      "size": "140038"
+    },
+    {
+      "host": "arm64-apple-darwin",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-arm64-apple-darwin.tar.gz",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-arm64-apple-darwin.tar.gz",
+      "checksum": "SHA-256:80298189fe858f2b3ab576984cf2fa00ca59a9beb29bda8b87381582e053ad3d",
+      "size": "134785"
+    },
+    {
+      "host": "x86_64-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-x86_64-mingw32.zip",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-mingw32.zip",
+      "checksum": "SHA-256:b8ac5d64bf6633d0396b05df241483395223710c1f1ef6ae7140aa76c2a8c06c",
+      "size": "186872"
+    },
+    {
+      "host": "i686-mingw32",
+      "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-i686-mingw32.zip",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-i686-mingw32.zip",
+      "checksum": "SHA-256:34ebf75a7cd70366a31cf92fb9441cf42118d0df053c326d27ceead28f8c960d",
+      "size": "195413"
+    }
+  ],
+  "upstreamCommittedAt": "2026-08-28T08:46:11Z",
+  "libusb": {
+    "version": "1.0.29",
+    "checksum": "SHA-256:5977fc950f8d1395ccea9bd48c06b3f808fd3c2c961b44b0c2e6e29fc3a70a85",
+    "url": "https://github.com/libusb/libusb/releases/download/v1.0.29/libusb-1.0.29.tar.bz2",
+    "linkage": "static"
+  },
+  "sourceBundle": {
+    "url": "https://github.com/ch32-riscv-ug/build-minichlink/releases/download/v2026.8.28-g618bba5-r1/minichlink-2026.8.28-g618bba5-r1-sources.tar.gz",
+    "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-sources.tar.gz",
+    "checksum": "SHA-256:22cb77763619f615d6ae7570616c0594b165fb55717fdea00a6b0485e0de072f",
+    "size": "3641264"
+  },
+  "builds": [
+    {
+      "host": "x86_64-pc-linux-gnu",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-pc-linux-gnu.tar.gz",
+      "runner": "GitHub Actions 1000004139",
+      "cc": "gcc",
+      "ccVersion": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "cflags": "-O2 -DNDEBUG -Wall -Wno-unused-function -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "/home/runner/work/build-minichlink/build-minichlink/work/x86_64-pc-linux-gnu/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -ludev -Wl,-s",
+      "dynamicDependencies": [
+        "libudev.so.1",
+        "libc.so.6"
+      ],
+      "binaryFormat": "ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=82bd8b1e34daf540ac0c1f83e77d8e2751433b69, for GNU/Linux 3.2.0, stripped",
+      "executionChecks": "run: minichlink -h exited 255 and advertised -l"
+    },
+    {
+      "host": "aarch64-linux-gnu",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-aarch64-linux-gnu.tar.gz",
+      "runner": "GitHub Actions 1000004136",
+      "cc": "gcc",
+      "ccVersion": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "cflags": "-O2 -DNDEBUG -Wall -Wno-unused-function -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "/home/runner/work/build-minichlink/build-minichlink/work/aarch64-linux-gnu/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -ludev -Wl,-s",
+      "dynamicDependencies": [
+        "libudev.so.1",
+        "libc.so.6",
+        "ld-linux-aarch64.so.1"
+      ],
+      "binaryFormat": "ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=f0306d410059b6b4b3511fbf6f5b37c27a8e1914, for GNU/Linux 3.7.0, stripped",
+      "executionChecks": "run: minichlink -h exited 255 and advertised -l"
+    },
+    {
+      "host": "x86_64-apple-darwin",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-apple-darwin.tar.gz",
+      "runner": "GitHub Actions 1000004137",
+      "cc": "cc",
+      "ccVersion": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+      "cflags": "-O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "/Users/runner/work/build-minichlink/build-minichlink/work/x86_64-apple-darwin/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x",
+      "dynamicDependencies": [
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit",
+        "/System/Library/Frameworks/Security.framework/Versions/A/Security"
+      ],
+      "binaryFormat": "Mach-O 64-bit executable x86_64",
+      "executionChecks": "run: minichlink -h exited 255 and advertised -l"
+    },
+    {
+      "host": "arm64-apple-darwin",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-arm64-apple-darwin.tar.gz",
+      "runner": "GitHub Actions 1000004135",
+      "cc": "cc",
+      "ccVersion": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+      "cflags": "-O2 -DNDEBUG -Wall -Wno-unused-function -Wno-asm-operand-widths -Wno-deprecated-declarations -Wno-deprecated-non-prototype -D__MACOSX__ -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "/Users/runner/work/build-minichlink/build-minichlink/work/arm64-apple-darwin/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -framework CoreFoundation -framework IOKit -framework Security -Wl,-x",
+      "dynamicDependencies": [
+        "/usr/lib/libSystem.B.dylib",
+        "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+        "/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit",
+        "/System/Library/Frameworks/Security.framework/Versions/A/Security"
+      ],
+      "binaryFormat": "Mach-O 64-bit executable arm64",
+      "executionChecks": "run: minichlink -h exited 255 and advertised -l"
+    },
+    {
+      "host": "x86_64-mingw32",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-x86_64-mingw32.zip",
+      "runner": "GitHub Actions 1000004134",
+      "cc": "x86_64-w64-mingw32-gcc",
+      "ccVersion": "x86_64-w64-mingw32-gcc (GCC) 13-win32",
+      "cflags": "-O2 -DNDEBUG -Wall -D_WIN32_WINNT=0x0600 -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "-static /home/runner/work/build-minichlink/build-minichlink/work/x86_64-mingw32/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -lsetupapi -lcfgmgr32 -lole32 -ladvapi32 -lws2_32 -Wl,-s",
+      "dynamicDependencies": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "WS2_32.dll"
+      ],
+      "binaryFormat": "PE32+ executable (console) x86-64 (stripped to external PDB), for MS Windows, 11 sections",
+      "executionChecks": "skipped: cross-built binary cannot run on this runner"
+    },
+    {
+      "host": "i686-mingw32",
+      "archiveFileName": "minichlink-2026.8.28-g618bba5-r1-i686-mingw32.zip",
+      "runner": "GitHub Actions 1000004138",
+      "cc": "i686-w64-mingw32-gcc",
+      "ccVersion": "i686-w64-mingw32-gcc (GCC) 13-win32",
+      "cflags": "-O2 -DNDEBUG -Wall -D_WIN32_WINNT=0x0600 -DCH32V003 -DMINICHLINK -I.",
+      "ldflags": "-static /home/runner/work/build-minichlink/build-minichlink/work/i686-mingw32/libusb-build/libusb/.libs/libusb-1.0.a -lpthread -lsetupapi -lcfgmgr32 -lole32 -ladvapi32 -lws2_32 -Wl,--undefined=_Sleep@4 -Wl,-s",
+      "dynamicDependencies": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "WS2_32.dll"
+      ],
+      "binaryFormat": "PE32 executable (console) Intel 80386 (stripped to external PDB), for MS Windows, 10 sections",
+      "executionChecks": "skipped: cross-built binary cannot run on this runner"
+    }
+  ]
+}
